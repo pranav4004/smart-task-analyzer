@@ -222,9 +222,17 @@ Total: ~5.5 hours
 
 ## 📸 Screenshots
 
-_(Add after pushing to GitHub)_
 
----
+### 🔹 Dashboard
+![Dashboard](screenshots/screenshot_dashboard.png)
+
+### 🔹 Analysis & Visualizations
+![Visuals](screenshots/screenshot_graph.png)
+
+### 🔹 Top 3 Suggestions
+![Suggestions](screenshots/screenshot_suggestion.png)
+
+
 
 ## 📎 Submission
 
