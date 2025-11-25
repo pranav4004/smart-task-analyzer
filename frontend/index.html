@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Smart Task Analyzer Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">STA</div>
+        <div class="logo-text">
+          <h1>Smart Task Analyzer</h1>
+          <p>Priority intelligence for your workday</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>Strategy</h2>
+        <select id="strategy-select">
+          <option value="smart_balance">Smart Balance (Recommended)</option>
+          <option value="fastest_wins">Fastest Wins (Quick tasks first)</option>
+          <option value="high_impact">High Impact (Impact > everything)</option>
+          <option value="deadline_driven">Deadline Driven (Due-date focused)</option>
+        </select>
+        <p class="hint">
+          Switch strategies to see how priorities change.
+        </p>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>Actions</h2>
+        <button id="analyze-btn" class="btn primary">Analyze Tasks</button>
+        <button id="suggest-btn" class="btn ghost">Suggest Today's Top 3</button>
+        <p id="status-text" class="status-text"></p>
+      </div>
+
+      <div class="sidebar-section info-section">
+        <h2>Legend</h2>
+        <div class="priority-legend">
+          <span class="priority-pill high">High</span>
+          <span class="priority-pill medium">Medium</span>
+          <span class="priority-pill low">Low</span>
+        </div>
+        <p class="hint">Priority coloring is based on computed score.</p>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+      <!-- Top panel: Task input -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Add Tasks</h2>
+          <p>Use the form or paste JSON for bulk input.</p>
+        </div>
+        <div class="card-body task-input-layout">
+          <!-- Form input -->
+          <div class="task-form">
+            <div class="form-group">
+              <label for="task-id">Task ID (optional)</label>
+              <input id="task-id" type="text" placeholder="e.g. T1 (auto-generated if empty)" />
+            </div>
+            <div class="form-group">
+              <label for="task-title">Title</label>
+              <input id="task-title" type="text" placeholder="Fix login bug" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="task-due">Due Date</label>
+                <input id="task-due" type="date" />
+              </div>
+              <div class="form-group">
+                <label for="task-hours">Estimated Hours</label>
+                <input id="task-hours" type="number" min="0" step="0.25" placeholder="3" />
+              </div>
+              <div class="form-group">
+                <label for="task-importance">Importance (1-10)</label>
+                <input id="task-importance" type="number" min="1" max="10" value="5" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="task-deps">Dependencies (IDs, comma-separated)</label>
+              <input id="task-deps" type="text" placeholder="e.g. T1,T3" />
+            </div>
+            <button id="add-task-btn" class="btn small">Add Task</button>
+          </div>
+
+          <!-- JSON bulk input -->
+          <div class="task-json">
+            <label for="tasks-json">Bulk JSON Input</label>
+            <textarea id="tasks-json" placeholder='[
+  {
+    "id": "T1",
+    "title": "Fix login bug",
+    "due_date": "2025-11-30",
+    "estimated_hours": 3,
+    "importance": 8,
+    "dependencies": []
+  }
+]'></textarea>
+            <div class="bulk-buttons">
+              <button id="load-json-btn" class="btn small">Load JSON as Tasks</button>
+              <button id="export-json-btn" class="btn ghost small">Export Current Tasks</button>
+            </div>
+            <p class="hint">
+              JSON must be an array of task objects matching the API schema.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Middle panel: Current tasks -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Current Task List</h2>
+          <p>Tasks that will be sent to the API.</p>
+        </div>
+        <div class="card-body">
+          <table class="table" id="tasks-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Due</th>
+                <th>Hours</th>
+                <th>Importance</th>
+                <th>Dependencies</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tasks-tbody">
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+          <p id="no-tasks-text" class="empty-text">No tasks yet. Add one using the form above.</p>
+        </div>
+      </section>
+
+      <!-- Bottom layout -->
+      <section class="bottom-layout">
+        <!-- Analyzed results -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Analyzed Priorities</h2>
+            <p>Sorted by selected strategy with explanations.</p>
+          </div>
+          <div class="card-body">
+            <div id="strategy-badge" class="strategy-badge"></div>
+            <table class="table" id="results-table">
+              <thead>
+                <tr>
+                  <th>Score</th>
+                  <th>Priority</th>
+                  <th>Title</th>
+                  <th>Due</th>
+                  <th>Hours</th>
+                  <th>Importance</th>
+                  <th>Cycle?</th>
+                </tr>
+              </thead>
+              <tbody id="results-tbody">
+                <!-- Filled by JS -->
+              </tbody>
+            </table>
+            <p id="no-results-text" class="empty-text">
+              Run an analysis to see prioritized tasks here.
+            </p>
+          </div>
+        </div>
+
+        <!-- Right column: Visualization -->
+        <div class="right-column">
+          <!-- Suggestions -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Top 3 Suggestions</h2>
+              <p>Tasks you should work on today.</p>
+            </div>
+            <div class="card-body">
+              <ul id="suggestions-list" class="suggestions-list">
+                <!-- Filled by JS -->
+              </ul>
+              <p id="no-suggestions-text" class="empty-text">
+                Click "Suggest Today's Top 3" after an analysis.
+              </p>
+            </div>
+          </div>
+
+          <!-- Dependency & Eisenhower visuals -->
+          <div class="card">
+            <div class="card-header">
+              <h2>Dependency Graph & Eisenhower Matrix</h2>
+              <p>Visual overview of how tasks relate and where they fall.</p>
+            </div>
+            <div class="card-body visualization-body">
+              <div class="visual-block">
+                <h3>Dependency Graph</h3>
+                <div id="dependency-graph" class="dependency-graph">
+                  <!-- Filled by JS -->
+                </div>
+              </div>
+
+              <div class="visual-block">
+                <h3>Eisenhower Matrix</h3>
+                <div class="matrix-grid">
+                  <div class="matrix-cell">
+                    <div class="matrix-label">Important & Urgent</div>
+                    <ul id="matrix-iu"></ul>
+                  </div>
+                  <div class="matrix-cell">
+                    <div class="matrix-label">Important & Not Urgent</div>
+                    <ul id="matrix-inu"></ul>
+                  </div>
+                  <div class="matrix-cell">
+                    <div class="matrix-label">Not Important & Urgent</div>
+                    <ul id="matrix-niu"></ul>
+                  </div>
+                  <div class="matrix-cell">
+                    <div class="matrix-label">Not Important & Not Urgent</div>
+                    <ul id="matrix-ninu"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
